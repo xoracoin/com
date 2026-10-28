@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>XORA</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --gold:#f5c22b; --gold2:#d99a00; --glass:rgba(18,40,30,.55); --line:rgba(255,255,255,.28); --txt:#fff;
+  /* Fon rasmini o'zgartirish uchun: --bg: url('rasm.jpg'); */
+  --bg:linear-gradient(#2f6fd0 0%,#8cc0ee 30%,#e8f3fb 42%,#4c8d52 55%,#1f5130 80%,#143a22 100%);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;touch-action:manipulation}
+html,body{margin:0;height:100%;overflow:hidden;font-family:Roboto,Arial,sans-serif;color:var(--txt);background:#143a22}
+body{background:var(--bg) center/cover no-repeat fixed}
+button{font-family:inherit;color:inherit;cursor:pointer}
+input{font-family:inherit;color:#fff;user-select:text}
+#app{position:fixed;inset:0;display:flex;flex-direction:column}
+/* LOADER */
+#loader{position:fixed;inset:0;z-index:999;background:var(--bg) center/cover;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s}
+#loader.hide{opacity:0;pointer-events:none}
+#loader .ring{position:relative;width:240px;height:240px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:2px solid rgba(255,255,255,.35);box-shadow:0 0 60px rgba(255,210,80,.55)}
+#loader .ring svg{animation:spin 3s ease-in-out infinite}
+@keyframes spin{0%{transform:rotateY(0)}100%{transform:rotateY(360deg)}}
+#loader h1{font-size:64px;letter-spacing:8px;margin:26px 0 4px;text-shadow:0 4px 8px rgba(0,0,0,.6)}
+#loader .sub{letter-spacing:8px;font-weight:700;font-size:15px;text-shadow:0 2px 4px #000}
+#loader .sub i{color:var(--gold);font-style:normal;margin:0 6px}
+.bar{width:78%;max-width:420px;height:26px;border-radius:20px;border:2px solid #cfd8cf;background:rgba(20,50,30,.6);margin-top:34px;overflow:hidden}
+.bar>div{height:100%;width:0;background:linear-gradient(90deg,#5f8f55,#b9e07a);transition:width .1s linear}
+#pct{font-size:30px;font-weight:900;margin-top:16px;text-shadow:0 2px 6px #000}
+/* HEADER */
+#hdr{display:flex;align-items:center;gap:8px;padding:10px 12px 6px}
+.lvl{width:44px;height:44px;border-radius:50%;background:#2c88b5;display:flex;align-items:center;justify-content:center;font-weight:900;border:2px solid rgba(255,255,255,.5);flex:none}
+.who{flex:1;min-width:0;text-shadow:0 1px 4px #000}
+.who small{display:block;letter-spacing:2px;font-size:11px;opacity:.9}.who small b{color:#5be08a}
+.who div{font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{display:flex;align-items:center;gap:6px;background:rgba(20,50,80,.55);border:1.5px solid var(--line);border-radius:22px;padding:6px 10px;font-weight:900;font-size:15px}
+.plus{width:24px;height:24px;border-radius:50%;background:var(--gold);color:#000;border:0;font-weight:900;line-height:1}
+.dot{width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe98a,#f2b100);display:inline-block}
+#view{flex:1;overflow-y:auto;padding:6px 12px 130px;scrollbar-width:none}
+#view::-webkit-scrollbar{display:none}
+/* NAV */
+#nav{position:fixed;left:10px;right:10px;bottom:calc(12px + env(safe-area-inset-bottom));display:flex;justify-content:space-around;padding:8px 6px;border-radius:34px;background:rgba(10,32,22,.85);border:3px solid transparent;background-clip:padding-box;box-shadow:0 0 0 3px #ff7aa8, 0 0 0 5px #6ad4ff;backdrop-filter:blur(8px)}
+#nav button{flex:1;background:none;border:2px solid transparent;border-radius:24px;padding:8px 2px;font-size:10.5px;font-weight:800;letter-spacing:1.5px;display:flex;flex-direction:column;align-items:center;gap:4px;opacity:.9}
+#nav button span{font-size:24px;line-height:1}
+#nav button.on{background:rgba(245,194,43,.18);border-color:rgba(245,194,43,.7);color:var(--gold);box-shadow:0 0 14px rgba(245,194,43,.4)}
+/* COMMON */
+.card{background:var(--glass);border:1.5px solid var(--line);border-radius:26px;padding:14px;margin:10px 0;backdrop-filter:blur(6px);text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.row{display:flex;align-items:center;gap:12px}
+.ico{width:52px;height:52px;border-radius:16px;border:1.5px solid var(--line);background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:26px;flex:none}
+.grow{flex:1;min-width:0}
+.t1{font-weight:800;font-size:18px}.t2{font-size:14px;opacity:.9}
+.seg{display:flex;background:rgba(20,50,80,.45);border:1.5px solid var(--line);border-radius:24px;padding:6px;margin:10px 0}
+.seg button{flex:1;background:none;border:2px solid transparent;border-radius:18px;padding:12px 4px;font-weight:900;font-size:16px;letter-spacing:1px;display:flex;align-items:center;justify-content:center;gap:8px;text-shadow:0 1px 3px #000}
+.seg button.on{border-color:#fff;background:rgba(255,255,255,.1)}
+.btn{background:linear-gradient(#f7cf3d,#e0a90f);color:#2a1d00;border:0;border-radius:30px;padding:14px;font-weight:900;font-size:16px;letter-spacing:.5px;width:100%;text-shadow:none;box-shadow:0 5px 14px rgba(0,0,0,.35)}
+.btn.sm{width:auto;padding:12px 20px}
+.btn.ghost{background:rgba(255,255,255,.08);color:#fff;border:2px solid var(--line);box-shadow:none}
+.btn[disabled]{opacity:.5}
+.btn.out{background:transparent;color:#fff;border:2px solid var(--gold);box-shadow:none;border-radius:26px}
+.lab{font-size:13px;letter-spacing:2.5px;font-weight:800;margin:16px 4px 8px;text-shadow:0 1px 3px #000}
+.inp{width:100%;background:rgba(20,50,40,.4);border:1.5px solid var(--line);border-radius:22px;padding:16px;font-size:20px;outline:0}
+.inp:focus{border-color:#fff}
+.chev{font-size:26px;opacity:.7}
+/* HOME */
+#bigc{display:flex;align-items:center;justify-content:center;gap:12px;font-size:56px;font-weight:900;margin-top:4px;text-shadow:0 4px 8px rgba(0,0,0,.45)}
+#bigc .dot{width:46px;height:46px;border:4px solid #d9a000}
+#coinwrap{display:flex;justify-content:center;position:relative;margin-top:10px;touch-action:none}
+#coin{width:min(58vw,260px);height:min(58vw,260px);transition:transform .08s;filter:drop-shadow(0 10px 18px rgba(0,0,0,.4))}
+#coin.p{transform:scale(.95)}
+#shopbtn{position:absolute;right:4%;bottom:-14px;background:linear-gradient(#f4cf4a,#d9a61a);border:0;border-radius:26px;padding:14px 24px;font-weight:900;font-size:20px;color:#2a1d00;box-shadow:0 4px 10px rgba(0,0,0,.4);text-shadow:none}
+.cname{text-align:center;font-size:28px;font-weight:900;color:#ffd24a;margin:26px 0 12px;text-shadow:0 3px 6px #000;letter-spacing:.5px}
+.en{border-radius:34px;padding:16px 18px}
+.en .top{display:flex;justify-content:space-between;align-items:center;font-weight:900;letter-spacing:2px;font-size:20px}
+.en .top b{background:rgba(0,0,0,.4);border:1.5px solid var(--line);border-radius:20px;padding:6px 18px;letter-spacing:3px}
+.en .bt{height:30px;border-radius:20px;border:3px solid #dfe5d8;margin-top:14px;background:rgba(0,0,0,.35);overflow:hidden;padding:2px}
+.en .bt>div{height:100%;background:linear-gradient(#ffe36a,#e3a700);border-radius:20px;transition:width .15s}
+.fl{position:fixed;font-weight:900;font-size:34px;color:#fff;pointer-events:none;text-shadow:0 2px 6px #000;animation:fly .8s ease-out forwards;z-index:50}
+@keyframes fly{to{transform:translateY(-90px);opacity:0}}
+/* MODAL */
+#modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);display:none;align-items:flex-end}
+#modal.on{display:flex}
+.sheet{width:100%;max-height:92vh;overflow-y:auto;background:rgba(40,70,60,.55);border:1.5px solid var(--line);border-bottom:0;border-radius:36px 36px 0 0;padding:20px 16px 30px;animation:up .25s}
+@keyframes up{from{transform:translateY(60px);opacity:0}}
+.sheet h2{margin:0 0 12px;font-size:26px;display:flex;justify-content:space-between;align-items:center}
+.sheet h2 button{background:none;border:0;font-size:34px;line-height:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.skin{border:1.5px solid var(--line);border-radius:30px;padding:12px;background:rgba(255,255,255,.07);position:relative}
+.skin.sel{border-color:var(--gold);border-width:3px}
+.skin .im{background:linear-gradient(#e3b92a,#c99c10);border-radius:24px;padding:12px;display:flex;justify-content:center;position:relative;border:1.5px solid rgba(255,255,255,.25)}
+.skin .pr{position:absolute;top:8px;right:8px;background:rgba(20,50,80,.8);border:1.5px solid var(--line);border-radius:18px;padding:4px 10px;font-weight:900;color:#5bb8ff;font-size:15px;z-index:2}
+.skin .tag{position:absolute;top:8px;left:8px;background:var(--gold);color:#000;border-radius:16px;padding:4px 10px;font-weight:900;font-size:13px;z-index:2}
+.skin h4{margin:10px 2px 2px;font-size:20px}.skin p{margin:0 2px 10px;opacity:.85;font-size:14px}
+.opt{border:1.5px solid var(--line);border-radius:26px;padding:16px;text-align:center;background:rgba(255,255,255,.07);font-weight:900;font-size:26px}
+.opt small{display:block;color:#5bb8ff;font-size:24px;margin-top:6px}
+.opt.on{border-color:var(--gold);background:rgba(245,194,43,.15)}
+#toast{position:fixed;left:50%;top:80px;transform:translateX(-50%);background:rgba(0,0,0,.85);padding:12px 20px;border-radius:20px;z-index:300;font-weight:700;display:none;max-width:90%;text-align:center}
+#wheel{transition:transform 4s cubic-bezier(.12,.7,.1,1)}
+.diam{color:#5bb8ff;font-weight:900}
+.mini{font-size:13px;opacity:.85}
+</style>
+</head>
+<body>
+<div id="loader">
+  <div class="ring" id="lcoin"></div>
+  <h1>XORA</h1>
+  <div class="sub">COIN<i>◆</i>ALMAZ<i>◆</i>AUKSION</div>
+  <div class="bar"><div id="lbar"></div></div>
+  <div id="pct">0%</div>
+</div>
+
+<div id="app">
+  <div id="hdr">
+    <div class="lvl">01</div>
+    <div class="who"><small>XORA <b>✓</b></small><div id="uname">@guest</div></div>
+    <div class="pill"><span>💎</span><span class="diam" id="hd">0</span><button class="plus" data-act="exch">+</button></div>
+    <div class="pill"><span class="dot"></span><span id="hc">0</span></div>
+  </div>
+  <div id="view"></div>
+  <div id="nav">
+    <button data-tab="boost"><span>🚀</span>BOOST</button>
+    <button data-tab="tasks"><span>✅</span>VAZIFALAR</button>
+    <button data-tab="home" class="on"><span>🪙</span>BOSISH</button>
+    <button data-tab="auc"><span>🔨</span>AUKSION</button>
+    <button data-tab="prof"><span>👤</span>PROFIL</button>
+  </div>
+</div>
+<div id="modal"><div class="sheet" id="sheet"></div></div>
+<div id="toast"></div>
+
+<script>
+/* ================= SOZLAMALAR ================= */
+const CFG = {
+  BOT: 'YOUR_BOT_USERNAME',   // <-- o'z botingiz username'ini (@siz) yozing
+  PER_PERSON: 3,              // vazifa uchun 1 kishiga ajratiladigan olmos (300 olmos = 100 kishi)
+  MIN_PEOPLE: 100,            // minimal 300 olmos
+  TASK_REWARD: 5,             // kanalga obuna bo'lgani uchun beriladigan olmos
+  INVITE_REWARD: 50,          // do'st taklif qilganga olmos
+  SPIN_COST: 5000,            // baraban bir aylanishi (coin)
+  MIN_ORDER: 500              // hamma xizmatlar uchun minimal miqdor
+};
+
+/* Boost xizmatlari: narx = 1000 ta uchun olmos */
+const SERVICES = {
+  instagram: [
+    {id:'ig_view', n:'Instagram Prasmotr',   d:'Sifatli ko\'rishlar', rate:3000},
+    {id:'ig_share',n:'Instagram Jo\'natishlar',d:'Haqiqiy ulashishlar', rate:3000},
+    {id:'ig_sub',  n:'Instagram Obunachi',   d:'Tez va sifatli obunachilar', rate:7000},
+    {id:'ig_like', n:'Instagram Like',       d:'Tez va sifatli like', rate:5000}
+  ],
+  telegram: [
+    {id:'tg_view', n:'Telegram Prasmotr',  d:'Tezkor ko\'rishlar', rate:3000},
+    {id:'tg_react',n:'Telegram Reaksiya',  d:'Jonli reaksiyalar', rate:3000},
+    {id:'tg_sub',  n:'TG OBUNACHILAR',     d:'Telegram obunachilar', rate:7000}
+  ]
+};
+
+/* Do'kondagi tangalar (img: 'https://...' qo'shsangiz o'z rasmingiz chiqadi) */
+const SKINS = [
+  {id:'basic',   n:'XORA ODIY', price:10,   mult:1, en:200,  a:'#ffe27a',b:'#f5b50f',c:'#a86a00',t:'#6b3d00',e:''},
+  {id:'silver',  n:'Kumush',    price:500,  mult:2, en:400,  a:'#ffffff',b:'#c3c8d0',c:'#6a707c',t:'#2d3138',e:'✦'},
+  {id:'bronze',  n:'Bronza',    price:650,  mult:3, en:600,  a:'#ffd1a0',b:'#c9803a',c:'#6e3e12',t:'#3a1f06',e:'★'},
+  {id:'ruby',    n:'Yoqut',     price:700,  mult:4, en:800,  a:'#ffa5a5',b:'#e0243a',c:'#7a0c1c',t:'#3a0008',e:'♦'},
+  {id:'emerald', n:'Zumrad',    price:1000, mult:5, en:1000, a:'#b0f7c8',b:'#1fb760',c:'#0b5a30',t:'#033a1c',e:'❖'},
+  {id:'sapphire',n:'Safir',     price:3000, mult:6, en:1200, a:'#a6d4ff',b:'#2a6ee0',c:'#12307a',t:'#06194a',e:'✧'},
+  {id:'amethyst',n:'Ametist',   price:4000, mult:6, en:1400, a:'#ecc0ff',b:'#9b4fe0',c:'#46207a',t:'#240a4a',e:'✺'},
+  {id:'obsidian',n:'Obsidian',  price:6500, mult:7, en:1600, a:'#8d8d9e',b:'#2b2b38',c:'#0a0a12',t:'#ffd34d',e:'☠'}
+];
+
+const WHEEL = [65,60,95,40,1000,70,45,75,55];
+const WCOL  = ['#ee7d93','#e86d88','#e99b55','#dcb840','#47b873','#2aaea6','#3f7fdc','#8f6fe0','#d68ad5'];
+
+/* ADMIN AUKSIONLARI: shu yerda o'zgartirasiz (soat = tugashigacha qolgan vaqt) */
+const ADMIN_AUCTIONS = [
+  {id:'a1', title:'LIVE 1+ STARS', seller:'@uzalmaz1', hours:2.9, start:150, bidder:'@Sharroffiddinov'},
+  {id:'a2', title:'Telegram Premium 1 oy', seller:'@admin', hours:20, start:300, bidder:''},
+  {id:'a3', title:'Eski auksion (tugagan)', seller:'@admin', hours:-5, start:500, bidder:'@Sharroffiddinov'}
+];
+
+/* ================= HOLAT ================= */
+const KEY='xora_state_v1';
+const tg = window.Telegram && window.Telegram.WebApp;
+if(tg){ try{tg.ready();tg.expand();}catch(e){} }
+const TU = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null;
+
+const DEFAULTS = {d:0,c:0,energy:200,skin:'basic',owned:['basic'],tasks:[],done:{},pending:{},orders:[],uzs:0,bonus:0,music:false,lang:'uz',invited:0,aucs:null};
+let S;
+try{ S = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem(KEY)) || {}); }catch(e){ S = Object.assign({}, DEFAULTS); }
+// buzilgan saqlangan ma'lumotdan himoya
+if(!Array.isArray(S.owned)||!S.owned.length) S.owned=['basic'];
+if(!Array.isArray(S.tasks)) S.tasks=[];
+if(!Array.isArray(S.orders)) S.orders=[];
+if(typeof S.done!=='object'||!S.done) S.done={};
+if(typeof S.pending!=='object'||!S.pending) S.pending={};
+if(!SKINS.some(k=>k.id===S.skin)) S.skin='basic';
+['d','c','energy','uzs','invited'].forEach(k=>{ if(typeof S[k]!=='number'||isNaN(S[k])) S[k]=0; });
+if(!S.aucs){
+  S.aucs = ADMIN_AUCTIONS.map(a=>({id:a.id,title:a.title,seller:a.seller,end:Date.now()+a.hours*3600e3,cur:a.start,top:a.bidder,users:a.bidder?[a.bidder]:[],mine:0,settled:false}));
+}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>Number(n).toLocaleString('ru-RU').replace(/\u00a0/g,' ');
+const skin=()=>SKINS.find(k=>k.id===S.skin)||SKINS[0];
+const myName='@'+((TU&&TU.username)||(TU&&TU.first_name)||'guest');
+$('#uname').textContent=myName;
+
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',2200)}
+function hdr(){$('#hd').textContent=fmt(S.d);$('#hc').textContent=fmt(S.c)}
+function openLink(u){ if(tg&&tg.openTelegramLink&&/^https:\/\/t\.me/.test(u)) tg.openTelegramLink(u); else window.open(u,'_blank') }
+
+/* ================= TANGA RASMI ================= */
+function coin(k,size){
+  if(k.img) return `<img src="${esc(k.img)}" width="${size}" height="${size}" style="border-radius:50%;object-fit:cover" draggable="false">`;
+  const id='cg'+k.id;
+  return `<svg viewBox="0 0 200 200" width="${size}" height="${size}" draggable="false">
+  <defs><radialGradient id="${id}" cx="35%" cy="28%" r="85%"><stop offset="0" stop-color="${k.a}"/><stop offset=".55" stop-color="${k.b}"/><stop offset="1" stop-color="${k.c}"/></radialGradient></defs>
+  <circle cx="100" cy="100" r="97" fill="${k.c}"/>
+  <circle cx="100" cy="100" r="91" fill="url(#${id})"/>
+  <circle cx="100" cy="100" r="72" fill="none" stroke="${k.c}" stroke-opacity=".55" stroke-width="4"/>
+  <ellipse cx="72" cy="52" rx="38" ry="16" fill="#fff" opacity=".28" transform="rotate(-25 72 52)"/>
+  <text x="100" y="138" text-anchor="middle" font-size="112" font-weight="900" font-family="Arial Black,Impact,sans-serif" fill="${k.t}" stroke="${k.a}" stroke-opacity=".5" stroke-width="2">X</text>
+  <text x="100" y="30" text-anchor="middle" font-size="16" fill="${k.t}" opacity=".8">${k.e}</text>
+  <text x="100" y="186" text-anchor="middle" font-size="16" fill="${k.t}" opacity=".8">${k.e}</text>
+  </svg>`;
+}
+
+/* ================= YUKLANISH 0 → 100% (3 soniya) ================= */
+(function loader(){
+  $('#lcoin').innerHTML=coin(SKINS[0],170);
+  const t0=performance.now(),D=3000;
+  (function step(now){
+    const p=Math.min(100,Math.floor((now-t0)/D*100));
+    $('#lbar').style.width=p+'%';$('#pct').textContent=p+'%';
+    if(p<100) requestAnimationFrame(step);
+    else setTimeout(()=>{$('#loader').classList.add('hide');setTimeout(()=>$('#loader').remove(),600)},250);
+  })(t0);
+})();
+
+/* ================= NAVIGATSIYA ================= */
+let tab='home', sub={tasks:'avail',boost:'instagram',auc:'live'};
+function go(t){tab=t;document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));render()}
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.tab));
+
+function render(){
+  const v=$('#view');
+  v.innerHTML = ({home:vHome,tasks:vTasks,boost:vBoost,auc:vAuc,prof:vProf})[tab]();
+  v.scrollTop=0;
+  if(tab==='home') bindCoin();
+  hdr();
+}
+const seg=(a,b,cur,key)=>`<div class="seg">${[a,b].map(x=>`<button class="${cur===x[0]?'on':''}" data-act="sub" data-k="${key}" data-v="${x[0]}">${x[2]||''}${x[1]}</button>`).join('')}</div>`;
+
+/* ================= BOSISH (ASOSIY) ================= */
+function vHome(){
+  const k=skin();
+  return `<div id="bigc"><span class="dot"></span><span id="bc">${fmt(S.c)}</span></div>
+  <div id="coinwrap"><div id="coin">${coin(k,'100%')}</div><button id="shopbtn" data-act="shop">🛍️ SHOP</button></div>
+  <div class="cname">${esc(k.n)}</div>
+  <div class="card en"><div class="top"><span>⚡ ENERGIYA</span><b id="et">${Math.floor(S.energy)}/${k.en}</b></div>
+  <div class="bt"><div id="eb" style="width:${S.energy/k.en*100}%"></div></div></div>`;
+}
+function bindCoin(){
+  const c=$('#coin');
+  c.addEventListener('pointerdown',e=>{
+    e.preventDefault();
+    const k=skin();
+    if(S.energy<1){toast('Energiya tugadi ⚡');return}
+    S.energy-=1;S.c+=k.mult;
+    c.classList.add('p');setTimeout(()=>c.classList.remove('p'),80);
+    const f=document.createElement('div');f.className='fl';f.textContent='+'+k.mult;
+    f.style.left=(e.clientX-12)+'px';f.style.top=(e.clientY-30)+'px';document.body.appendChild(f);setTimeout(()=>f.remove(),800);
+    $('#bc').textContent=fmt(S.c);hdr();$('#et').textContent=Math.floor(S.energy)+'/'+k.en;$('#eb').style.width=S.energy/k.en*100+'%';
+    if(tg&&tg.HapticFeedback)try{tg.HapticFeedback.impactOccurred('light')}catch(_){}
+  });
+}
+setInterval(()=>{ // energiya tiklanishi
+  const k=skin();
+  if(S.energy<k.en){S.energy=Math.min(k.en,S.energy+1);if(tab==='home'&&$('#et')){$('#et').textContent=Math.floor(S.energy)+'/'+k.en;$('#eb').style.width=S.energy/k.en*100+'%'}}
+  save();
+},1000);
+
+/* ================= SHOP ================= */
+function shop(){
+  const body=SKINS.map((k,i)=>{
+    const owned=S.owned.includes(k.id), sel=S.skin===k.id;
+    const unlocked=SKINS.slice(0,i).every(x=>S.owned.includes(x.id));
+    const btn=sel?`<button class="btn ghost" disabled>TANLANGAN</button>`:owned?`<button class="btn" data-act="pick" data-id="${k.id}">TANLASH</button>`:
+      unlocked?`<button class="btn" data-act="buy" data-id="${k.id}">SOTIB OLISH</button>`:`<button class="btn ghost" disabled>🔒 QULFLANGAN</button>`;
+    return `<div class="skin ${sel?'sel':''}">${sel?'<div class="tag">✓ TANLANGAN</div>':''}<div class="im"><div class="pr">💎 ${fmt(k.price)}</div>${coin(k,110)}</div>
+    <h4>${esc(k.n)}</h4><p>x${k.mult} click · ⚡ ${fmt(k.en)} max energiya</p>${btn}</div>`;
+  }).join('');
+  modal('Mine Coin Do\'kon',`<p class="t2" style="margin-top:0">Olmos bilan xarid qiling. Har bir daraja avvalgi darajadagi HAMMA belgilarni yig'ganingizdan keyin ochiladi.</p><div class="grid2">${body}</div>`);
+}
+
+/* ================= VAZIFALAR ================= */
+function vTasks(){
+  let h=seg(['avail','MAVJUD'],['create','YARATISH'],sub.tasks,'tasks');
+  if(sub.tasks==='create'){
+    h+=`<div class="lab">TELEGRAM KANAL USERNAME</div><input class="inp" id="tu" placeholder="@username" autocapitalize="off">
+    <div class="lab">NECHTA ODAM (minimal ${CFG.MIN_PEOPLE})</div><input class="inp" id="tn" type="number" inputmode="numeric" value="${CFG.MIN_PEOPLE}">
+    <div class="lab">AJRATILADIGAN OLMOS</div><div class="card" style="margin:0"><div class="mini" style="letter-spacing:2px">NARXI</div><div style="font-size:40px;font-weight:900">💎 <span id="tp">${CFG.MIN_PEOPLE*CFG.PER_PERSON}</span></div><div class="mini">Minimal ${CFG.MIN_PEOPLE*CFG.PER_PERSON} olmos = ${CFG.MIN_PEOPLE} kishi</div></div>
+    <button class="btn" style="margin-top:22px;font-size:20px;background:none;color:#fff;box-shadow:none;text-shadow:0 2px 6px #000" data-act="mk">Vazifani joylash</button>`;
+  } else {
+    // Reklama ko'rish vazifalari ATAYLAB OLIB TASHLANGAN
+    h+=`<div class="card row"><div class="ico">👥</div><div class="grow"><div class="t1">Do'stlar</div><div class="t2">+${CFG.INVITE_REWARD} <span class="diam">💎</span> har bir taklif uchun (do'st til tanlagach)</div><div class="mini">Taklif qilinganlar: ${S.invited}</div></div><button class="btn out sm" data-act="invite" style="width:auto;padding:12px;font-size:15px">Taklif qilish</button></div>`;
+    h+=`<div class="lab">HAMMAGA KO'RINADIGAN VAZIFALAR</div>`;
+    const list=S.tasks.filter(t=>!S.done[t.id]&&t.left>0);
+    h+= list.length? list.map(t=>{
+      const p=S.pending[t.id];
+      return `<div class="card row"><div class="ico">✈️</div><div class="grow"><div class="t1">@${esc(t.u)}</div><div class="t2">Kanalga obuna bo'ling · +${CFG.TASK_REWARD} 💎</div><div class="mini">Qolgan: ${t.left} kishi</div></div>
+      ${p?`<button class="btn sm" data-act="chk" data-id="${t.id}">Tekshirish</button>`:`<button class="btn out sm" data-act="join" data-id="${t.id}" style="width:auto;padding:12px;font-size:14px">Obuna bo'lish</button>`}</div>`}).join('')
+      : `<div class="t2" style="font-size:18px;padding:6px 4px">Hozircha umumiy vazifalar yo'q</div>`;
+  }
+  return h;
+}
+
+/* ================= BOOST ================= */
+function vBoost(){
+  let h=`<div class="card row" data-act="wheel"><div class="ico" style="background:linear-gradient(135deg,#7b4fe0,#4a2aa8);width:66px;height:66px;font-size:36px">💎</div><div class="grow"><div class="t1" style="font-size:24px">Olmos barabani</div><div class="t2">Aylantiring va olmos yutib oling</div></div><div class="chev">›</div></div>`;
+  h+=seg(['instagram','INSTAGRAM','📸 '],['telegram','TELEGRAM','✈️ '],sub.boost,'boost');
+  h+=SERVICES[sub.boost].map(s=>`<div class="card row" data-act="order" data-id="${s.id}"><div class="ico" style="font-size:30px">${sub.boost==='instagram'?'📸':'✈️'}</div><div class="grow"><div class="t1">${s.n}</div><div class="t2">${s.d} · min ${CFG.MIN_ORDER}</div><div class="mini">1000 ta = <span class="diam">${fmt(s.rate)} 💎</span></div></div><div class="chev">›</div></div>`).join('');
+  return h;
+}
+function findSvc(id){return [...SERVICES.instagram,...SERVICES.telegram].find(s=>s.id===id)}
+let ordSel={};
+function orderModal(id){
+  const s=findSvc(id);ordSel={id,qty:0};
+  const opts=[500,1000,2000].map(q=>`<div class="opt" data-act="oq" data-q="${q}">${fmt(q)} ta<small>${fmt(Math.ceil(q*s.rate/1000))} 💎</small></div>`).join('');
+  modal(s.n,`<div class="mini" style="margin-bottom:10px">${sub.boost.toUpperCase()} · <span class="diam">${fmt(s.rate)} 💎</span> / 1000 ta</div>
+  <div class="lab" style="margin-top:6px">HAVOLA / USERNAME</div><input class="inp" id="ol" placeholder="@username yoki havola" autocapitalize="off">
+  <div class="lab">MIQDORNI TANLANG</div><div class="grid2">${opts}</div>
+  <div class="lab">YOKI O'ZINGIZ KIRITING</div><input class="inp" id="oc" type="number" inputmode="numeric" placeholder="Miqdorni kiriting (minimal ${CFG.MIN_ORDER})">
+  <div class="row" style="justify-content:space-between;margin:16px 4px"><span>Jami narx:</span><span class="diam" style="font-size:34px" id="ot">0 💎</span></div>
+  <button class="btn" data-act="ob">Buyurtma berish</button>`);
+  $('#oc').oninput=e=>{ordSel.qty=parseInt(e.target.value)||0;document.querySelectorAll('.opt').forEach(o=>o.classList.remove('on'));ordTot()};
+}
+function ordTot(){const s=findSvc(ordSel.id);$('#ot').textContent=fmt(Math.ceil(ordSel.qty*s.rate/1000))+' 💎'}
+
+/* ================= BARABAN ================= */
+let rot=0,spinning=false;
+function wheelSVG(){
+  const n=WHEEL.length,R=170,cx=180,cy=180;let p='';
+  for(let i=0;i<n;i++){
+    const a0=(i*360/n-90)*Math.PI/180,a1=((i+1)*360/n-90)*Math.PI/180,am=(a0+a1)/2;
+    const x0=cx+R*Math.cos(a0),y0=cy+R*Math.sin(a0),x1=cx+R*Math.cos(a1),y1=cy+R*Math.sin(a1);
+    const tx=cx+R*.68*Math.cos(am),ty=cy+R*.68*Math.sin(am),deg=am*180/Math.PI+90;
+    p+=`<path d="M${cx} ${cy}L${x0} ${y0}A${R} ${R} 0 0 1 ${x1} ${y1}Z" fill="${WCOL[i]}" stroke="#fff" stroke-opacity=".6" stroke-width="2"/>
+    <text transform="translate(${tx} ${ty}) rotate(${deg})" text-anchor="middle" font-size="22" font-weight="900" fill="#fff" stroke="#0003" stroke-width="1">${fmt(WHEEL[i])}💎</text>`;
+  }
+  return `<div style="position:relative;width:100%;max-width:360px;margin:0 auto"><div style="position:absolute;left:50%;top:-14px;transform:translateX(-50%);width:6px;height:40px;background:linear-gradient(#ffe27a,#fff0);border-radius:4px;z-index:3"></div>
+  <svg id="wheel" viewBox="0 0 360 360" style="transform:rotate(${rot}deg);width:100%;display:block;border-radius:50%;border:8px solid rgba(255,255,255,.35)">${p}</svg>
+  <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.2);border:3px solid rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:24px;backdrop-filter:blur(4px)">Xora</div></div>`;
+}
+function wheelModal(){
+  modal('Olmos barabani',`${wheelSVG()}<div class="row" style="justify-content:center;margin:22px 0 12px"><span class="dot"></span><span style="font-size:20px">${fmt(CFG.SPIN_COST)} har bir aylanish uchun</span></div><button class="btn ghost" id="spinb" data-act="spin" style="font-size:24px;letter-spacing:3px">AYLANTIRISH</button>`);
+}
+function spin(){
+  if(spinning)return;
+  if(S.c<CFG.SPIN_COST){toast('Coin yetarli emas');return}
+  S.c-=CFG.SPIN_COST;hdr();spinning=true;
+  // 1000 olmos juda kam chiqadi
+  const w=WHEEL.map(v=>v===1000?1:20),tot=w.reduce((a,b)=>a+b);let r=Math.random()*tot,i=0;while(r>w[i]){r-=w[i];i++}
+  const center=i*(360/WHEEL.length)+180/WHEEL.length;
+  const cur=((rot%360)+360)%360;
+  rot+=((360-center)-cur+360)%360+360*6;
+  $('#wheel').style.transform=`rotate(${rot}deg)`;
+  setTimeout(()=>{spinning=false;S.d+=WHEEL[i];save();hdr();toast('🎉 +'+WHEEL[i]+' 💎 yutdingiz!')},4100);
+}
+
+/* ================= AUKSION ================= */
+function left(ms){if(ms<=0)return'Tugagan';const s=Math.floor(ms/1000);return`${Math.floor(s/3600)} soat ${Math.floor(s%3600/60)} daq ${s%60} son`}
+function vAuc(){
+  let h=seg(['live','FAOL'],['end','TUGAGAN'],sub.auc,'auc');
+  const now=Date.now();
+  const list=S.aucs.filter(a=>sub.auc==='live'?a.end>now:a.end<=now);
+  h+=list.length?list.map(a=>`<div class="card" data-act="aview" data-id="${a.id}">
+    <div class="row" style="justify-content:space-between"><div class="t1" style="font-size:22px">🌟 ${esc(a.title)}</div><div class="t2 tm" data-end="${a.end}" style="font-weight:800">${left(a.end-now)}</div></div>
+    <div class="t2" style="margin-top:8px;font-size:18px">Sotuvchi: ${esc(a.seller)}</div>
+    <div class="row" style="justify-content:space-between;margin-top:6px"><div class="t1" style="font-size:20px">${sub.auc==='live'?'Joriy taklif':'Yakuniy'}: <span class="dot" style="width:18px;height:18px"></span> ${fmt(a.cur)}</div><div class="t2">${sub.auc==='live'?'Ko\'rish uchun bosing ›':(a.top?'G\'olib: '+esc(a.top):'')}</div></div></div>`).join('')
+  :`<div class="t2" style="font-size:18px;padding:10px 4px">${sub.auc==='live'?'Hozircha faol auksionlar yo\'q':'Tugagan auksionlar yo\'q'}</div>`;
+  return h;
+}
+function aucModal(id){
+  const a=S.aucs.find(x=>x.id===id);if(!a)return;
+  const live=a.end>Date.now();
+  const rank=a.top?`<div class="card row" style="margin:0"><div class="ico" style="font-size:30px;font-weight:900">1</div><div class="grow"><div class="t1">${esc(a.top)}</div><div class="t2">G'oliblikka davogar</div></div><div class="t1"><span class="dot" style="width:18px;height:18px"></span> ${fmt(a.cur)}</div></div>`:'<div class="t2">Hali takliflar yo\'q</div>';
+  modal('🌟 '+a.title,`<p class="t2" style="margin-top:0">Vaqt tugaguncha eng ko'p tanga taklif qilgan foydalanuvchi yutuqni oladi. Kamida 2 ishtirokchi bo'lmasa (raqobat yo'q) yutuq berilmaydi va coin qaytariladi.</p>
+  <div class="row" style="justify-content:space-between;font-size:18px"><span>Qolgan: <b>${left(a.end-Date.now())}</b></span><span>Bidlar: <b>${a.users.length}</b></span></div>
+  <div class="row" style="justify-content:space-between;font-size:18px;margin:8px 0"><span>Joriy: <b style="color:#ffd24a">${fmt(a.cur)}</b> <span class="dot" style="width:16px;height:16px"></span></span><span>Siz: <b>${fmt(a.mine)}</b> <span class="dot" style="width:16px;height:16px"></span></span></div>
+  <div class="lab">REYTING</div>${rank}
+  ${live?`<div class="lab">TAKLIFINGIZ (coin) · kamida +50</div><input class="inp" id="bv" type="number" inputmode="numeric" value="${a.cur+50}"><button class="btn" style="margin-top:14px" data-act="bid" data-id="${a.id}">TAKLIF BERISH</button>`:`<div class="t1" style="margin-top:14px">Auksion tugagan${a.top?' · G\'olib: '+esc(a.top):''}</div>`}`);
+}
+function settle(){
+  const now=Date.now();let ch=false;
+  S.aucs.forEach(a=>{
+    if(a.end<=now&&!a.settled){a.settled=true;ch=true;
+      if(a.mine>0){
+        const win=a.users.length>=2&&a.top===myName;
+        if(!win){S.c+=a.mine;toast('Auksion tugadi: coin qaytarildi');a.mine=0}
+      }
+    }
+  });
+  if(ch){save();hdr();if(tab==='auc')render()}
+}
+setInterval(()=>{ // taymerlar
+  document.querySelectorAll('.tm').forEach(e=>{e.textContent=left(e.dataset.end-Date.now())});
+  settle();
+},1000);
+
+/* ================= PROFIL ================= */
+function vProf(){
+  const item=(i,t,s,act)=>`<div class="card row" data-act="${act}"><div class="ico">${i}</div><div class="grow"><div class="t1">${t}</div>${s?`<div class="t2">${s}</div>`:''}</div><div class="chev">›</div></div>`;
+  return `<div class="card"><div class="mini" style="font-size:16px">UZS</div><div style="font-size:56px;font-weight:900;color:#5be08a">${fmt(S.uzs)} UZS</div>
+  <div class="row" style="margin-top:12px"><button class="btn out" style="border-color:#5be08a;flex:1" data-act="dep">💳 Pul kiritish</button><button class="btn out" style="flex:1" data-act="wd">🏧 Pul chiqarish</button></div></div>
+  ${item('🎁','Kunlik Bonus','','bonus')}
+  ${item('🛍️','Buyurtmalarim','','orders')}
+  ${item('💎','Olmos Yuborish','','send')}
+  ${item('🏆','Reyting','','rank')}
+  ${item('🎮','O\'YINLAR','🛠️ Profilaktika ishlari','games')}
+  ${item('🎬','Relis Mone','','relis')}
+  ${item('🌐','Til',({uz:'O\'zbekcha',ru:'Русский',en:'English'})[S.lang],'lang')}
+  ${item(S.music?'🔊':'🔇','Musiqa',S.music?'Yoqilgan':'O\'chirilgan','music')}
+  ${item('🔄','Savdo va almashinuv','💎 almaz · 🟡 coin','exch')}`;
+}
+
+/* ================= MODAL ================= */
+function modal(title,html){
+  $('#sheet').innerHTML=`<h2><span>${title}</span><button data-act="close">✕</button></h2>${html}`;
+  $('#modal').classList.add('on');
+  const tn=$('#tn');if(tn)tn.oninput=()=>{};
+}
+function closeM(){$('#modal').classList.remove('on');$('#sheet').innerHTML=''}
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeM()});
+
+/* ================= HARAKATLAR ================= */
+const A={
+  close:closeM,
+  sub(d){sub[d.k]=d.v;render()},
+  shop,
+  pick(d){S.skin=d.id;S.energy=Math.min(S.energy,skin().en);save();shop();toast('Tanga tanlandi ✓')},
+  buy(d){
+    const k=SKINS.find(x=>x.id===d.id);
+    if(S.d<k.price){toast('Olmos yetarli emas 💎');return}
+    S.d-=k.price;S.owned.push(k.id);S.skin=k.id;save();hdr();shop();toast('Sotib olindi: '+k.n+' ✓');
+  },
+  invite(){
+    const uid=TU?TU.id:'0';
+    const link=`https://t.me/${CFG.BOT}?start=ref_${uid}`;
+    const url=`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('XORA — tanga bos, olmos yig\'! 💎')}`;
+    openLink(url);
+  },
+  mk(){
+    let u=($('#tu').value||'').trim().replace(/^https?:\/\/t\.me\//,'').replace(/^@/,'');
+    const n=parseInt($('#tn').value)||0;
+    if(!/^[A-Za-z0-9_]{5,32}$/.test(u)){toast('Kanal/guruh usernameni to\'g\'ri yozing');return}
+    if(n<CFG.MIN_PEOPLE){toast('Minimal '+CFG.MIN_PEOPLE+' kishi ('+CFG.MIN_PEOPLE*CFG.PER_PERSON+' olmos)');return}
+    const price=n*CFG.PER_PERSON;
+    if(S.d<price){toast('Olmos yetarli emas: kerak '+fmt(price)+' 💎');return}
+    S.d-=price;S.tasks.push({id:'t'+Date.now(),u,total:n,left:n});save();hdr();
+    sub.tasks='avail';render();toast('Vazifa joylandi ✓');
+  },
+  join(d){const t=S.tasks.find(x=>x.id===d.id);if(!t)return;S.pending[d.id]=Date.now();save();openLink('https://t.me/'+t.u);render()},
+  chk(d){
+    const t=S.tasks.find(x=>x.id===d.id);if(!t)return;
+    if(Date.now()-S.pending[d.id]<4000){toast('Avval kanalga obuna bo\'ling');return}
+    S.done[d.id]=true;delete S.pending[d.id];t.left--;S.d+=CFG.TASK_REWARD;save();render();toast('+'+CFG.TASK_REWARD+' 💎 berildi');
+  },
+  wheel:wheelModal,spin,
+  order(d){orderModal(d.id)},
+  oq(d){ordSel.qty=+d.q;$('#oc').value='';document.querySelectorAll('.opt').forEach(o=>o.classList.toggle('on',o.dataset.q===d.q));ordTot()},
+  ob(){
+    const s=findSvc(ordSel.id),l=($('#ol').value||'').trim(),q=ordSel.qty;
+    if(!l){toast('Havola yoki usernameni kiriting');return}
+    if(q<CFG.MIN_ORDER){toast('Minimal miqdor: '+CFG.MIN_ORDER);return}
+    const p=Math.ceil(q*s.rate/1000);
+    if(S.d<p){toast('Olmos yetarli emas 💎');return}
+    S.d-=p;S.orders.unshift({n:s.n,l,q,p,t:Date.now(),st:'Jarayonda'});save();hdr();closeM();toast('Buyurtma qabul qilindi ✓');
+  },
+  aview(d){aucModal(d.id)},
+  bid(d){
+    const a=S.aucs.find(x=>x.id===d.id),v=parseInt($('#bv').value)||0;
+    if(a.end<=Date.now()){toast('Auksion tugagan');return}
+    if(v<a.cur+50){toast('Kamida '+fmt(a.cur+50)+' kiriting');return}
+    const need=v-a.mine;
+    if(S.c<need){toast('Coin yetarli emas');return}
+    S.c-=need;a.mine=v;a.cur=v;a.top=myName;if(!a.users.includes(myName))a.users.push(myName);save();hdr();aucModal(a.id);toast('Taklif qabul qilindi ✓');
+  },
+  dep(){toast('Pul kiritish tez orada')},wd(){toast('Pul chiqarish tez orada')},
+  bonus(){
+    const day=new Date().toDateString();
+    if(S.bonus===day){toast('Bugungi bonus olingan. Ertaga qaytib keling 🎁');return}
+    S.bonus=day;S.c+=50;save();hdr();toast('🎁 +50 coin');
+  },
+  orders(){
+    modal('Buyurtmalarim',S.orders.length?S.orders.map(o=>`<div class="card"><div class="t1">${esc(o.n)}</div><div class="t2">${esc(o.l)}</div><div class="row" style="justify-content:space-between;margin-top:6px"><span>${fmt(o.q)} ta · <span class="diam">${fmt(o.p)} 💎</span></span><b style="color:#ffd24a">${o.st}</b></div></div>`).join(''):'<div class="t2" style="font-size:18px">Buyurtmalar yo\'q</div>');
+  },
+  send(){
+    modal('Olmos yuborish',`<div class="lab" style="margin-top:0">USERNAME</div><input class="inp" id="su" placeholder="@username" autocapitalize="off"><div class="lab">MIQDOR 💎</div><input class="inp" id="sa" type="number" inputmode="numeric" placeholder="0"><button class="btn" style="margin-top:18px" data-act="dosend">Yuborish</button>`);
+  },
+  dosend(){
+    const u=($('#su').value||'').trim(),a=parseInt($('#sa').value)||0;
+    if(!/^@?[A-Za-z0-9_]{5,32}$/.test(u)){toast('Username noto\'g\'ri');return}
+    if(a<1||a>S.d){toast('Miqdor noto\'g\'ri yoki olmos yetarli emas');return}
+    S.d-=a;save();hdr();closeM();toast('Yuborildi: '+a+' 💎 → '+u.replace(/^@?/,'@'));
+  },
+  rank(){
+    const board=[{n:'@Sharroffiddinov',c:152340},{n:'@uzalmaz1',c:98200},{n:'@admin',c:41000},{n:myName,c:S.c}].sort((a,b)=>b.c-a.c);
+    modal('Reyting',board.map((r,i)=>`<div class="card row" style="${r.n===myName?'border-color:var(--gold)':''}"><div class="ico" style="font-weight:900;font-size:22px">${i+1}</div><div class="grow t1">${esc(r.n)}</div><div class="t1"><span class="dot" style="width:18px;height:18px"></span> ${fmt(r.c)}</div></div>`).join(''));
+  },
+  games(){toast('🛠️ Profilaktika ishlari')},relis(){toast('Tez orada')},
+  lang(){
+    modal('Til',['uz|O\'zbekcha','ru|Русский','en|English'].map(x=>{const[a,b]=x.split('|');return `<button class="btn ${S.lang===a?'':'ghost'}" style="margin-bottom:10px" data-act="setlang" data-v="${a}">${b}</button>`}).join(''));
+  },
+  setlang(d){S.lang=d.v;save();closeM();render()},
+  music(){S.music=!S.music;save();render()},
+  exch(){
+    modal('Savdo va almashinuv',`<p class="t2" style="margin-top:0">1 💎 = 1 000 coin</p>
+    <div class="lab">ALMAZ OLISH (coin → 💎)</div><input class="inp" id="ea" type="number" inputmode="numeric" placeholder="Nechta 💎"><button class="btn" style="margin:10px 0 18px" data-act="c2d">Coin bilan olmos olish</button>
+    <div class="lab">COIN OLISH (💎 → coin)</div><input class="inp" id="eb2" type="number" inputmode="numeric" placeholder="Nechta 💎"><button class="btn ghost" style="margin-top:10px" data-act="d2c">Olmosni coinga almashtirish</button>`);
+  },
+  c2d(){const n=parseInt($('#ea').value)||0;if(n<1||S.c<n*1000){toast('Coin yetarli emas');return}S.c-=n*1000;S.d+=n;save();hdr();closeM();toast('+'+n+' 💎')},
+  d2c(){const n=parseInt($('#eb2').value)||0;if(n<1||S.d<n){toast('Olmos yetarli emas');return}S.d-=n;S.c+=n*1000;save();hdr();closeM();toast('+'+fmt(n*1000)+' coin')}
+};
+document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(t&&A[t.dataset.act])A[t.dataset.act](t.dataset)});
+document.addEventListener('input',e=>{
+  if(e.target.id==='tn'){const n=parseInt(e.target.value)||0;$('#tp').textContent=fmt(n*CFG.PER_PERSON)}
+});
+document.addEventListener('contextmenu',e=>e.preventDefault());
+
+render();settle();
+</script>
+</body>
+</html>
